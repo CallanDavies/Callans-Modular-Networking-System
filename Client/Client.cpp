@@ -49,6 +49,7 @@ void Client::update(float deltaTime)
 
 	// query time since application started
 	float time = getTime();
+	
 	handleNetworkMessages();
 	// wipe the gizmos clean for this frame
 	Gizmos::clear();
@@ -60,10 +61,12 @@ void Client::update(float deltaTime)
 	if (input->isKeyDown(aie::INPUT_KEY_LEFT))
 	{
 		m_myGameObject.position.x -= 10.0f * deltaTime;
+		sendClientGameObject();
 	}
 	if (input->isKeyDown(aie::INPUT_KEY_RIGHT))
 	{
 		m_myGameObject.position.x += 10.0f * deltaTime;
+		sendClientGameObject();
 	}
 
 	Gizmos::addSphere(m_myGameObject.position, 1.0f, 32, 32, m_myGameObject.colour);
@@ -146,11 +149,90 @@ void Client::handleNetworkMessages()
 		case ID_CONNECTION_LOST:
 			std::cout << "Connection lost.\n";
 			break;
+		case ID_SERVER_TEXT_MESSAGE:
+		{
+			RakNet::BitStream bsIn(packet->data, packet->length, false);
+			bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+
+			RakNet::RakString str;
+			bsIn.Read(str);
+			std::cout << str.C_String() << std::endl;
+			break;
+		}
+		case ID_NEW_INCOMING_CONNECTION:
+		{
+			std::cout << "A connection is incoming.\n";
+			sendNewClientID(m_pPeerInterface, packet->systemAddress);
+			break;
+		}
+		case ID_SERVER_SET_CLIENT_ID:
+			onSetClientIDPacket(packet);
+			break;
+
+		case ID_CLIENT_CLIENT_DATA:
+		{
+			onReceivedClientDataPacket(packet);
+
+			RakNet::BitStream bs(packet->data, packet->length, false);
+			m_pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
+
+			break;
+		}
+		
+
 
 		default:
-			std::cout << "Received a mesaage with an unknown id: " << packet->data[0];
+			std::cout << "Received a message with an unknown id: " << packet->data[0];
 			break;
 		}
 	}
+}
+
+void Client::sendNewClientID(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress& address)
+{
+	RakNet::BitStream bs;
+	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_SET_CLIENT_ID);
+	bs.Write(nextClientID);
+	nextClientID++;
+
+	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, false);
+}
+
+void Client::sendClientGameObject()
+{
+	RakNet::BitStream bs;
+	bs.Write((RakNet::MessageID)GameMessages::ID_CLIENT_CLIENT_DATA);
+	bs.Write((m_MyClientID));
+	bs.Write((char*)&m_myGameObject, sizeof(GameObject));
+
+	m_pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+}
+
+void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
+{
+	RakNet::BitStream bsIn(packet->data, packet->length, false);
+	bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+
+	int clientID;
+	bsIn.Read(clientID);
+
+	// If the clientID does not match our ID, we need to update our client GameObject information.
+	if (clientID != m_MyClientID)
+	{
+		GameObject clientData;
+		bsIn.Read((char*)&clientData, sizeof(GameObject));
+
+		//for now, just output the Game Object information to the console
+		std::cout << "Client " << clientID << "at: " << clientData.position.x << " " << clientData.position.z << std::endl;
+	}
+}
+
+void Client::onSetClientIDPacket(RakNet::Packet* packet)
+{
+	RakNet::BitStream bsIn(packet->data, packet->length, false);
+	bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+	bsIn.Read(m_MyClientID);
+
+	std::cout << "Set my client ID to: " << m_MyClientID << std::endl;
 }
 

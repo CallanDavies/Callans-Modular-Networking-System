@@ -1,5 +1,4 @@
 #pragma once
-
 // forward declared structure for access to GLFW window
 struct GLFWwindow;
 

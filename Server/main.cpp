@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <thread>
+#include <chrono>
 
 #include <RakPeerInterface.h>
 #include <MessageIdentifiers.h>
@@ -12,11 +14,13 @@ enum GameMessages
 	ID_CLIENT_CLIENT_DATA
 };
 
-int nextClientID = 1;
+
+void sendClientPing(RakNet::RakPeerInterface* pPeerInterface);
 
 int main()
 {
-
+	
+	
 	const unsigned short PORT = 5456;
 	RakNet::RakPeerInterface* pPeerInterface = nullptr;
 
@@ -32,15 +36,25 @@ int main()
 	//Now call startup - max of 32 connections, on the assigned port
 	pPeerInterface->Startup(32, &sd, 1);
 	pPeerInterface->SetMaximumIncomingConnections(32);
+
+	//Startup a thread to ping clients every second
+	std::thread pingThread(sendClientPing, pPeerInterface);
+
 	system("Pause");
 }
 
-void sendNewCLientID(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress& address)
-{
-	RakNet::BitStream bs;
-	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_SET_CLIENT_ID);
-	bs.Write(nextClientID);
-	nextClientID++;
 
-	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, false);
+
+void sendClientPing(RakNet::RakPeerInterface* pPeerInterface)
+{
+	while (true)
+	{
+		RakNet::BitStream bs;
+		bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_TEXT_MESSAGE);
+		bs.Write("Ping!");
+
+		pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
+			RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
 }
