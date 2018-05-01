@@ -5,12 +5,15 @@
 #include <RakPeerInterface.h>
 #include <MessageIdentifiers.h>
 #include <BitStream.h>
+#include <imgui.h>
+#include <string>
 
 enum GameMessages
 {
 	ID_SERVER_TEXT_MESSAGE = ID_USER_PACKET_ENUM + 1,
 	ID_SERVER_SET_CLIENT_ID,
-	ID_CLIENT_CLIENT_DATA
+	ID_CLIENT_CLIENT_DATA,
+	ID_CLIENT_CHAT_MESSAGE
 };
 
 class Client : public aie::Application 
@@ -19,7 +22,7 @@ public:
 
 	struct GameObject
 	{
-		glm::vec3 position;
+		glm::vec2 position;
 		glm::vec4 colour;
 	};
 
@@ -46,6 +49,8 @@ public:
 
 	void sendClientGameObject();
 
+	void sendChatMessage(std::string message);
+
 	void onReceivedClientDataPacket(RakNet::Packet* packet);
 	
 protected:
@@ -58,6 +63,9 @@ protected:
 	GameObject m_myGameObject;
 
 	RakNet::RakPeerInterface* m_pPeerInterface;
+
+
+	std::string m_mostRecentMessageReceived;
 
 	const char* IP = "127.0.0.1";
 	const unsigned short PORT = 5456;
