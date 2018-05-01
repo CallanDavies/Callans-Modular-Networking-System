@@ -64,7 +64,12 @@ void handleNetworkMessages(RakNet::RakPeerInterface* pPeerInterface)
 			pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
 			break;
 		}
-		
+		case ID_CLIENT_CLIENT_DATA:
+		{
+			RakNet::BitStream bs(packet->data, packet->length, false);
+			pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
+			break;
+		}
 		default:
 			break;
 		}

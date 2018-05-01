@@ -7,6 +7,7 @@
 #include <BitStream.h>
 #include <imgui.h>
 #include <string>
+#include <map>
 
 enum GameMessages
 {
@@ -62,8 +63,9 @@ protected:
 
 	GameObject m_myGameObject;
 
-	RakNet::RakPeerInterface* m_pPeerInterface;
+	std::map<int, GameObject> m_otherClientGameObjects;
 
+	RakNet::RakPeerInterface* m_pPeerInterface;
 
 	std::string m_mostRecentMessageReceived;
 

@@ -55,6 +55,7 @@ void Client::update(float deltaTime)
 	// wipe the gizmos clean for this frame
 	Gizmos::clear();
 
+	// ImGui setup
 	ImGui::Begin("Chat");
 	ImGui::ColorEdit3("Circle colour", glm::value_ptr(m_myGameObject.colour));
 	static char inputText[128];
@@ -93,7 +94,14 @@ void Client::update(float deltaTime)
 		sendClientGameObject();
 	}
 
+	// drawing of the player circle
 	Gizmos::add2DCircle(m_myGameObject.position, 24.0f, 32, m_myGameObject.colour);
+
+	//drawing of the other circle
+	for (auto& otherClient : m_otherClientGameObjects)
+	{
+		Gizmos::add2DCircle(otherClient.second.position, 24.0f, 32, otherClient.second.colour);
+	}
 
 
 	if (input->isKeyDown(aie::INPUT_KEY_ESCAPE))
@@ -246,21 +254,6 @@ void Client::sendClientGameObject()
 	m_pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
 }
 
-void Client::sendChatMessage(std::string message)
-{
-	// cast message to rakstring
-	RakNet::RakString rakString;
-	rakString.Set(message.c_str());
-
-	// create packet
-	RakNet::BitStream bs;
-	bs.Write((RakNet::MessageID)GameMessages::ID_CLIENT_CHAT_MESSAGE);
-	bs.Write(rakString);
-
-	// send packet to everyone
-	m_pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
-}
-
 void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
 {
 	RakNet::BitStream bsIn(packet->data, packet->length, false);
@@ -275,9 +268,23 @@ void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
 		GameObject clientData;
 		bsIn.Read((char*)&clientData, sizeof(GameObject));
 
-		//for now, just output the Game Object information to the console
-		std::cout << "Client " << clientID << "at: " << clientData.position.x << " " << clientData.position.y << std::endl;
+		m_otherClientGameObjects[clientID] = clientData;
 	}
+}
+
+void Client::sendChatMessage(std::string message)
+{
+	// cast message to rakstring
+	RakNet::RakString rakString;
+	rakString.Set(message.c_str());
+
+	// create packet
+	RakNet::BitStream bs;
+	bs.Write((RakNet::MessageID)GameMessages::ID_CLIENT_CHAT_MESSAGE);
+	bs.Write(rakString);
+
+	// send packet to everyone
+	m_pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
 }
 
 void Client::onSetClientIDPacket(RakNet::Packet* packet)
