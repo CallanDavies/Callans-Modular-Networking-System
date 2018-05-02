@@ -57,16 +57,22 @@ void Client::update(float deltaTime)
 
 	// ImGui setup
 	ImGui::Begin("Chat");
+	// Editing of the Player Circle colour
 	ImGui::ColorEdit3("Circle colour", glm::value_ptr(m_myGameObject.colour));
 	static char inputText[128];
+	// Chat Log
+	ImGui::Text("Other User: ");
+	ImGui::SameLine();
+	ImGui::Text(m_mostRecentMessageReceived.c_str());
+	// Input for ChatLog
 	ImGui::InputText("##input", inputText, sizeof(inputText));
 	ImGui::SameLine();
 	if (ImGui::Button("Send##input", ImVec2(50,20))) 
 	{
-
+		// when button is clicked, send the string inside the ImGui input box to the server.
 		sendChatMessage(inputText);
 	}
-
+	// ImGui End
 	ImGui::End();
 	
 	// quit if we press escape
@@ -196,6 +202,7 @@ void Client::handleNetworkMessages()
 			RakNet::RakString str;
 			bsIn.Read(str);
 			std::cout << str.C_String() << std::endl;
+			
 			break;
 		}
 		case ID_NEW_INCOMING_CONNECTION:
