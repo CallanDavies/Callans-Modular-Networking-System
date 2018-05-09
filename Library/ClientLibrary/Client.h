@@ -47,9 +47,10 @@ public:
 
 	void onReceivedClientDataPacket(RakNet::Packet* packet);
 
-	GameObject getMyGameObject();
 
-	std::map<int, GameObject> getOtherClientGameObjects();
+	GameObject m_myGameObject;
+
+	std::map<int, GameObject> m_otherClientGameObjects;
 	
 protected:
 
@@ -58,9 +59,6 @@ protected:
 	int nextClientID = 1;
 	int m_MyClientID;
 
-	GameObject m_myGameObject;
-
-	std::map<int, GameObject> m_otherClientGameObjects;
 
 	RakNet::RakPeerInterface* m_pPeerInterface;
 
