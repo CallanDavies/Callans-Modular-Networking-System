@@ -56,6 +56,7 @@ void Application2D::update(float deltaTime)
 	}
 	if (input->isKeyDown(aie::INPUT_KEY_DOWN))
 	{
+		
 		//m_myGameObject.position.y -= 100.0f * deltaTime;
 		m_Client->sendClientGameObject();
 	}

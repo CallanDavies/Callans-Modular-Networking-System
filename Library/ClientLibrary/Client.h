@@ -46,6 +46,10 @@ public:
 	void sendChatMessage(std::string message);
 
 	void onReceivedClientDataPacket(RakNet::Packet* packet);
+
+	GameObject getMyGameObject();
+
+	std::map<int, GameObject> getOtherClientGameObjects();
 	
 protected:
 
